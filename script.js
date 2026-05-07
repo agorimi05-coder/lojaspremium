@@ -59,6 +59,13 @@ const checkoutProductText = document.querySelector("[data-checkout-product]");
 const checkoutTotalTexts = document.querySelectorAll("[data-checkout-total]");
 const checkoutFinishButton = document.querySelector("[data-checkout-finish]");
 const pixResult = document.querySelector("[data-pix-result]");
+const checkoutOrderImage = document.querySelector("[data-order-image]");
+const checkoutOrderProduct = document.querySelector("[data-order-product]");
+const checkoutOrderVariant = document.querySelector("[data-order-variant]");
+const checkoutOrderSubtotal = document.querySelector("[data-order-subtotal]");
+const checkoutOrderDiscount = document.querySelector("[data-order-discount]");
+const checkoutOrderShipping = document.querySelector("[data-order-shipping]");
+const checkoutOrderTotal = document.querySelector("[data-order-total]");
 const checkoutStepItems = document.querySelectorAll("[data-checkout-step-item]");
 const checkoutPanels = document.querySelectorAll("[data-checkout-panel]");
 const checkoutNextButtons = document.querySelectorAll("[data-checkout-next]");
@@ -96,6 +103,8 @@ const productState = {
   sizeLabel: "Queen (220 x 240 cm)",
   image: "img/branco-nuvem.png",
   price: 147.9,
+  shipping: 0,
+  shippingLabel: "Gratis",
 };
 
 const reviews = [
@@ -429,6 +438,7 @@ function handleMainGalleryPointerUp(event) {
 function updateProductPricing() {
   const pixPrice = Math.round(productState.price * 0.95 * 100) / 100;
   const pixSaving = Math.round((productState.price - pixPrice) * 100) / 100;
+  const finalTotal = Math.round((pixPrice + productState.shipping) * 100) / 100;
   const installment = Math.round((productState.price / 12) * 100) / 100;
 
   if (priceText) {
@@ -448,12 +458,40 @@ function updateProductPricing() {
   }
 
   if (checkoutProductText) {
-    checkoutProductText.textContent = `Premium Edredom Termico 2 em 1 - ${productState.colorLabel} - ${productState.sizeLabel}`;
+    checkoutProductText.textContent = `${productState.colorLabel} - ${productState.sizeLabel}`;
   }
 
   checkoutTotalTexts.forEach((item) => {
-    item.textContent = formatCurrency(pixPrice);
+    item.textContent = formatCurrency(finalTotal);
   });
+
+  if (checkoutOrderImage) {
+    checkoutOrderImage.src = productState.image;
+  }
+
+  if (checkoutOrderProduct) {
+    checkoutOrderProduct.textContent = "Premium Edredom Termico 2 em 1";
+  }
+
+  if (checkoutOrderVariant) {
+    checkoutOrderVariant.textContent = `${productState.colorLabel} - ${productState.sizeLabel}`;
+  }
+
+  if (checkoutOrderSubtotal) {
+    checkoutOrderSubtotal.textContent = formatCurrency(productState.price);
+  }
+
+  if (checkoutOrderDiscount) {
+    checkoutOrderDiscount.textContent = `- ${formatCurrency(pixSaving)}`;
+  }
+
+  if (checkoutOrderShipping) {
+    checkoutOrderShipping.textContent = productState.shipping > 0 ? formatCurrency(productState.shipping) : "Gratis";
+  }
+
+  if (checkoutOrderTotal) {
+    checkoutOrderTotal.textContent = formatCurrency(finalTotal);
+  }
 
 }
 
@@ -553,6 +591,80 @@ function setupCheckoutMasks() {
   });
 }
 
+async function fetchAddressByCep(zipcodeField) {
+  const digits = onlyDigits(zipcodeField.value);
+
+  if (digits.length !== 8) {
+    return;
+  }
+
+  zipcodeField.setCustomValidity("");
+  zipcodeField.classList.add("is-loading");
+
+  try {
+    const response = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
+
+    if (!response.ok) {
+      throw new Error("CEP indisponivel");
+    }
+
+    const address = await response.json();
+
+    if (address.erro) {
+      zipcodeField.setCustomValidity("CEP nao encontrado.");
+      zipcodeField.reportValidity();
+      return;
+    }
+
+    const addressField = getCheckoutField("address");
+    const neighborhoodField = getCheckoutField("neighborhood");
+    const cityField = getCheckoutField("city");
+    const stateField = getCheckoutField("state");
+    const numberField = getCheckoutField("number");
+
+    if (addressField && address.logradouro) {
+      addressField.value = address.logradouro;
+    }
+
+    if (neighborhoodField && address.bairro) {
+      neighborhoodField.value = address.bairro;
+    }
+
+    if (cityField && address.localidade) {
+      cityField.value = address.localidade;
+    }
+
+    if (stateField && address.uf) {
+      stateField.value = address.uf;
+    }
+
+    numberField?.focus();
+  } catch (error) {
+    zipcodeField.setCustomValidity("Nao foi possivel buscar o CEP agora.");
+    zipcodeField.reportValidity();
+  } finally {
+    zipcodeField.classList.remove("is-loading");
+  }
+}
+
+function setupCepLookup() {
+  const zipcodeField = getCheckoutField("zipcode");
+
+  if (!zipcodeField) {
+    return;
+  }
+
+  zipcodeField.addEventListener("input", () => {
+    zipcodeField.setCustomValidity("");
+
+    if (onlyDigits(zipcodeField.value).length === 8) {
+      fetchAddressByCep(zipcodeField);
+    }
+  });
+
+  zipcodeField.addEventListener("blur", () => fetchAddressByCep(zipcodeField));
+}
+
 function setupCheckoutPageState() {
   const params = new URLSearchParams(window.location.search);
   const color = params.get("color");
@@ -630,6 +742,33 @@ function updateAddressCard() {
   checkoutAddressCard.hidden = false;
 }
 
+function getSelectedShipping() {
+  const selected = inlineCheckout?.querySelector("[name='shipping_method']:checked");
+  const price = Number(selected?.dataset.shippingPrice || 0);
+  const option = selected?.closest(".shipping-option");
+  const label = option?.querySelector("strong")?.textContent || "Correios";
+
+  return {
+    label,
+    price: Number.isFinite(price) ? price : 0,
+  };
+}
+
+function updateShippingPricing() {
+  const shipping = getSelectedShipping();
+  productState.shipping = shipping.price;
+  productState.shippingLabel = shipping.price > 0 ? shipping.label : "Gratis";
+  updateProductPricing();
+}
+
+function setupShippingOptions() {
+  checkoutShippingRadios.forEach((radio) => {
+    radio.addEventListener("change", updateShippingPricing);
+  });
+
+  updateShippingPricing();
+}
+
 function setupCheckoutSteps() {
   checkoutNextButtons.forEach((button) => {
     button.addEventListener("click", () => {
@@ -687,6 +826,7 @@ function setupCheckoutSteps() {
 function buildPixPayload(form) {
   const data = new FormData(form);
   const pixAmount = Math.round(productState.price * 0.95 * 100);
+  const totalAmount = Math.round((pixAmount / 100 + productState.shipping) * 100);
 
   return {
     product: {
@@ -694,7 +834,10 @@ function buildPixPayload(form) {
       colorLabel: productState.colorLabel,
       size: productState.size,
       sizeLabel: productState.sizeLabel,
-      amount: pixAmount,
+      amount: totalAmount,
+      productAmount: Math.round(productState.price * 100),
+      pixDiscount: Math.round((productState.price - productState.price * 0.95) * 100),
+      shippingAmount: Math.round(productState.shipping * 100),
     },
     customer: {
       name: data.get("name"),
@@ -1408,6 +1551,8 @@ reviewLightbox?.addEventListener("click", (event) => {
 setupCheckoutPageState();
 setupImageFallbacks();
 setupCheckoutMasks();
+setupCepLookup();
+setupShippingOptions();
 setupCheckoutSteps();
 setupColorRibbon();
 setupBenefitsStory();

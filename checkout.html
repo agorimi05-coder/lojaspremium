@@ -144,15 +144,15 @@
             <div class="checkout-shipping">
               <p>Escolha uma forma de entrega:</p>
               <label class="shipping-option">
-                <input type="radio" name="shipping_method" value="correios" checked />
+                <input type="radio" name="shipping_method" value="correios" data-shipping-price="0" checked />
                 <span>
                   <strong>Correios</strong>
                   <small>5 a 7 dias uteis</small>
                 </span>
-                <b>Gratis</b>
+                <b data-shipping-label>Gratis</b>
               </label>
               <label class="shipping-option">
-                <input type="radio" name="shipping_method" value="sedex" />
+                <input type="radio" name="shipping_method" value="sedex" data-shipping-price="32.98" />
                 <span>
                   <strong>SEDEX</strong>
                   <small>3 a 5 dias uteis</small>
@@ -169,25 +169,43 @@
 
           <section class="checkout-panel" data-checkout-panel="3" hidden>
             <h2><span>3</span> Pagamento</h2>
-            <p>Escolha uma forma de pagamento</p>
+            <p>Confira seu pedido e finalize com Pix</p>
 
-            <div class="payment-method payment-method--muted">
-              <span class="radio-dot"></span>
-              <div>
-                <strong>Cartao de credito</strong>
-                <div class="mini-flags">
-                  <span>AMEX</span><span>VISA</span><span>ELO</span><span>MC</span>
+            <div class="payment-order-summary">
+              <div class="payment-order-product">
+                <img src="img/branco-nuvem.png" alt="Edredom Premium" data-order-image />
+                <div>
+                  <strong data-order-product>Premium Edredom Termico 2 em 1</strong>
+                  <span data-order-variant>Branco Nuvem - Queen</span>
                 </div>
               </div>
+              <dl>
+                <div>
+                  <dt>Produto</dt>
+                  <dd data-order-subtotal>R$ 147,90</dd>
+                </div>
+                <div>
+                  <dt>Desconto Pix 5%</dt>
+                  <dd class="is-discount" data-order-discount>- R$ 7,39</dd>
+                </div>
+                <div>
+                  <dt>Frete</dt>
+                  <dd data-order-shipping>Gratis</dd>
+                </div>
+                <div class="payment-order-total">
+                  <dt>Total</dt>
+                  <dd data-order-total>R$ 140,51</dd>
+                </div>
+              </dl>
             </div>
 
             <label class="payment-method is-selected">
               <input type="radio" name="payment" value="pix" checked />
-              <span>
+              <div>
                 <strong>Pix <em>Pagamento instantaneo no Pix</em></strong>
                 <small>A confirmacao de pagamento e realizada em poucos minutos. Utilize o aplicativo do seu banco para pagar.</small>
-                <b data-checkout-total>R$ 140,51</b>
-              </span>
+                <b>Valor no pix: <span data-checkout-total>R$ 140,51</span></b>
+              </div>
             </label>
 
             <button class="checkout-finish" type="submit" data-checkout-finish>

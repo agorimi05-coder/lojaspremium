@@ -5137,6 +5137,111 @@ body.menu-open .mobile-menu {
   font-weight: 900;
 }
 
+.payment-order-summary {
+  margin: 0 0 18px;
+  overflow: hidden;
+  background: #f7f8fb;
+  border: 1px solid #e1e2e8;
+  border-radius: 10px;
+}
+
+.payment-order-product {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  background: #fff;
+  border-bottom: 1px solid #e7e7ed;
+}
+
+.payment-order-product img {
+  flex: 0 0 58px;
+  width: 58px;
+  height: 58px;
+  object-fit: cover;
+  border-radius: 8px;
+  background: #efe7f8;
+}
+
+.payment-order-product strong,
+.payment-order-product span {
+  display: block;
+}
+
+.payment-order-product strong {
+  color: #242232;
+  font-size: 0.96rem;
+  line-height: 1.2;
+}
+
+.payment-order-product span {
+  margin-top: 4px;
+  color: #777584;
+  font-size: 0.88rem;
+}
+
+.payment-order-summary dl {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 14px;
+}
+
+.payment-order-summary dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.payment-order-summary dt,
+.payment-order-summary dd {
+  margin: 0;
+  color: #4f4d59;
+  font-size: 0.94rem;
+}
+
+.payment-order-summary dd {
+  font-weight: 800;
+  text-align: right;
+}
+
+.payment-order-summary dd.is-discount {
+  color: #36c879;
+}
+
+.payment-order-total {
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 1px solid #dfdfe7;
+}
+
+.payment-order-total dt,
+.payment-order-total dd {
+  color: #242232;
+  font-size: 1.12rem;
+  font-weight: 900;
+}
+
+.payment-order-total dd {
+  color: #36c879;
+}
+
+.checkout-panel input.is-loading {
+  background-image: linear-gradient(90deg, transparent, rgba(185, 163, 217, 0.18), transparent);
+  background-size: 220% 100%;
+  animation: cepLoading 1s linear infinite;
+}
+
+@keyframes cepLoading {
+  from {
+    background-position: 220% 0;
+  }
+
+  to {
+    background-position: -220% 0;
+  }
+}
+
 .mini-flags,
 .footer-flags {
   display: flex;
