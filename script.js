@@ -770,6 +770,23 @@ function setupShippingOptions() {
   updateShippingPricing();
 }
 
+function getStoredAttribution() {
+  const fallbackParams =
+    typeof window.getUtmifyGambiarraParams === "function"
+      ? window.getUtmifyGambiarraParams()
+      : {};
+
+  try {
+    const raw = window.localStorage.getItem("premium-utmify-attribution");
+    return {
+      ...fallbackParams,
+      ...(raw ? JSON.parse(raw) : {}),
+    };
+  } catch (error) {
+    return fallbackParams || {};
+  }
+}
+
 function setupCheckoutSteps() {
   checkoutNextButtons.forEach((button) => {
     button.addEventListener("click", () => {
@@ -826,35 +843,36 @@ function buildPixPayload(form) {
   const data = new FormData(form);
   const pixAmount = Math.round(productState.price * 0.95 * 100);
   const totalAmount = Math.round((pixAmount / 100 + productState.shipping) * 100);
+  const amount = totalAmount / 100;
+  const productName = `Premium Edredom Termico 2 em 1 - ${productState.colorLabel} - ${productState.sizeLabel}`;
 
   return {
-    product: {
-      color: productState.color,
-      colorLabel: productState.colorLabel,
-      size: productState.size,
-      sizeLabel: productState.sizeLabel,
-      amount: totalAmount,
-      productAmount: Math.round(productState.price * 100),
-      pixDiscount: Math.round((productState.price - productState.price * 0.95) * 100),
-      shippingAmount: Math.round(productState.shipping * 100),
-    },
+    amount,
     customer: {
-      name: data.get("name"),
+      fullName: data.get("name"),
       email: data.get("email"),
       document: onlyDigits(String(data.get("document") || "")),
       phone: onlyDigits(String(data.get("phone") || "")),
+      address: {
+        cep: data.get("zipcode"),
+        street: data.get("address"),
+        number: data.get("number"),
+        neighborhood: data.get("neighborhood"),
+        complement: data.get("complement"),
+        city: data.get("city"),
+        state: String(data.get("state") || "").toUpperCase(),
+      },
     },
-    shipping: {
-      zipcode: onlyDigits(String(data.get("zipcode") || "")),
-      address: data.get("address"),
-      number: data.get("number"),
-      neighborhood: data.get("neighborhood"),
-      complement: data.get("complement"),
-      city: data.get("city"),
-      state: String(data.get("state") || "").toUpperCase(),
-    },
-    shippingMethod: data.get("shipping_method") || "correios",
-    payment: "pix",
+    items: [
+      {
+        id: `${productState.color}-${productState.size}`,
+        name: productName,
+        quantity: 1,
+        unitPrice: amount,
+        totalPrice: amount,
+      },
+    ],
+    attribution: getStoredAttribution(),
   };
 }
 
@@ -863,8 +881,14 @@ function renderPixResult(data) {
     return;
   }
 
-  const qrCode = data.qr_code_base64 || data.qrCodeBase64;
-  const pixCode = data.pix_code || data.pixCode || data.copy_paste || data.copyPaste || "";
+  const qrCode = data.qrCode || data.qr_code_base64 || data.qrCodeBase64;
+  const pixCode =
+    data.copyAndPaste ||
+    data.copyPaste ||
+    data.pix_code ||
+    data.pixCode ||
+    data.copy_paste ||
+    "";
 
   pixResult.classList.add("is-open");
 
@@ -887,7 +911,6 @@ async function submitInlineCheckout(event) {
     return;
   }
 
-  const endpoint = window.PIX_CHECKOUT_ENDPOINT || "/api/pix/create";
   const payload = buildPixPayload(inlineCheckout);
 
   checkoutFinishButton?.setAttribute("disabled", "true");
@@ -897,17 +920,7 @@ async function submitInlineCheckout(event) {
   }
 
   try {
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      throw new Error("Pix indisponivel");
-    }
-
-    renderPixResult(await response.json());
+    renderPixResult(await createPixWithFallback(payload));
   } catch (error) {
     if (pixResult) {
       pixResult.classList.add("is-open");
@@ -919,6 +932,39 @@ async function submitInlineCheckout(event) {
   } finally {
     checkoutFinishButton?.removeAttribute("disabled");
   }
+}
+
+async function requestPix(endpoint, payload) {
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const text = await response.text();
+  const data = text ? JSON.parse(text) : {};
+
+  return { response, data };
+}
+
+async function createPixWithFallback(payload) {
+  const endpoints = [window.PIX_CHECKOUT_ENDPOINT || "/api/pix/create", "/api/pix/checkout"];
+  let lastMessage = "Nao foi possivel gerar o Pix agora.";
+
+  for (const endpoint of endpoints) {
+    try {
+      const { response, data } = await requestPix(endpoint, payload);
+
+      if (response.ok) {
+        return data;
+      }
+
+      lastMessage = data?.message || data?.details?.message || data?.details?.error || lastMessage;
+    } catch (error) {
+      lastMessage = error instanceof Error ? error.message : "Falha ao conectar com o Pix.";
+    }
+  }
+
+  throw new Error(lastMessage);
 }
 
 function setupImageFallbacks(scope = document) {
