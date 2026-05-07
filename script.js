@@ -1,24 +1,3 @@
-const checkoutLinks = {
-  branco: {
-    solteiro: "https://pagamento.ofcpremiumshop.com/checkout?product=82350db3-4446-11f1-b2a5-46da4690ad53",
-    casal: "https://pagamento.ofcpremiumshop.com/checkout?product=a9c42d81-4446-11f1-b2a5-46da4690ad53",
-    queen: "https://pagamento.ofcpremiumshop.com/checkout?product=cf2167e1-4446-11f1-b2a5-46da4690ad53",
-    king: "https://pagamento.ofcpremiumshop.com/checkout?product=f3351902-4446-11f1-b2a5-46da4690ad53",
-  },
-  rosa: {
-    solteiro: "https://pagamento.ofcpremiumshop.com/checkout?product=7e88ec3d-4444-11f1-b2a5-46da4690ad53",
-    casal: "https://pagamento.ofcpremiumshop.com/checkout?product=dc96e147-4444-11f1-b2a5-46da4690ad53",
-    queen: "https://pagamento.ofcpremiumshop.com/checkout?product=dc96e147-4444-11f1-b2a5-46da4690ad53",
-    king: "https://pagamento.ofcpremiumshop.com/checkout?product=8f06c4d1-4445-11f1-b2a5-46da4690ad53",
-  },
-  cinza: {
-    solteiro: "https://pagamento.ofcpremiumshop.com/checkout?product=c457eeef-4445-11f1-b2a5-46da4690ad53",
-    casal: "https://pagamento.ofcpremiumshop.com/checkout?product=f6f0a76c-4445-11f1-b2a5-46da4690ad53",
-    queen: "https://pagamento.ofcpremiumshop.com/checkout?product=22692e69-4446-11f1-b2a5-46da4690ad53",
-    king: "https://pagamento.ofcpremiumshop.com/checkout?product=4fef3acb-4446-11f1-b2a5-46da4690ad53",
-  },
-};
-
 const productCatalog = {
   branco: {
     label: "Branco Nuvem",
@@ -77,10 +56,17 @@ const checkoutButton = document.querySelector("[data-checkout-button]");
 const inlineCheckout = document.querySelector("[data-inline-checkout]");
 const checkoutImage = document.querySelector("[data-checkout-image]");
 const checkoutProductText = document.querySelector("[data-checkout-product]");
-const checkoutTotalText = document.querySelector("[data-checkout-total]");
-const checkoutFallback = document.querySelector("[data-checkout-fallback]");
+const checkoutTotalTexts = document.querySelectorAll("[data-checkout-total]");
 const checkoutFinishButton = document.querySelector("[data-checkout-finish]");
 const pixResult = document.querySelector("[data-pix-result]");
+const checkoutStepItems = document.querySelectorAll("[data-checkout-step-item]");
+const checkoutPanels = document.querySelectorAll("[data-checkout-panel]");
+const checkoutNextButtons = document.querySelectorAll("[data-checkout-next]");
+const checkoutBackButtons = document.querySelectorAll("[data-checkout-back]");
+const checkoutSaveAddressButton = document.querySelector("[data-save-address]");
+const checkoutAddressCard = document.querySelector("[data-address-card]");
+const checkoutAddressText = document.querySelector("[data-address-text]");
+const checkoutShippingRadios = document.querySelectorAll("[name='shipping_method']");
 const colorRibbonTrack = document.querySelector("[data-color-ribbon]");
 const benefitsStory = document.querySelector("[data-benefits-story]");
 const benefitsCarousel = document.querySelector("[data-benefits-carousel]");
@@ -465,13 +451,10 @@ function updateProductPricing() {
     checkoutProductText.textContent = `Premium Edredom Termico 2 em 1 - ${productState.colorLabel} - ${productState.sizeLabel}`;
   }
 
-  if (checkoutTotalText) {
-    checkoutTotalText.textContent = `${formatCurrency(pixPrice)} no Pix`;
-  }
+  checkoutTotalTexts.forEach((item) => {
+    item.textContent = formatCurrency(pixPrice);
+  });
 
-  if (checkoutFallback) {
-    checkoutFallback.href = buildCheckoutUrl();
-  }
 }
 
 function selectColor(option) {
@@ -513,19 +496,6 @@ function selectSize(option) {
   updateProductPricing();
 }
 
-function buildCheckoutUrl() {
-  const checkoutUrl = checkoutLinks[productState.color]?.[productState.size];
-  const finalUrl = new URL(checkoutUrl);
-  const currentParams = new URLSearchParams(window.location.search);
-
-  currentParams.forEach((value, key) => {
-    finalUrl.searchParams.set(key, value);
-  });
-
-  finalUrl.searchParams.set("insert_checkout", "true");
-  return finalUrl.toString();
-}
-
 function buildInternalCheckoutUrl() {
   const finalUrl = new URL("checkout.html", window.location.href);
   const currentParams = new URLSearchParams(window.location.search);
@@ -536,7 +506,6 @@ function buildInternalCheckoutUrl() {
 
   finalUrl.searchParams.set("color", productState.color);
   finalUrl.searchParams.set("size", productState.size);
-  finalUrl.searchParams.set("product", checkoutLinks[productState.color]?.[productState.size] || "");
   return finalUrl.toString();
 }
 
@@ -606,6 +575,115 @@ function setupCheckoutPageState() {
   }
 }
 
+function setCheckoutStep(step) {
+  if (!checkoutPanels.length) {
+    return;
+  }
+
+  checkoutPanels.forEach((panel) => {
+    const isActive = Number(panel.dataset.checkoutPanel) === step;
+    panel.classList.toggle("is-active", isActive);
+    panel.toggleAttribute("hidden", !isActive);
+  });
+
+  checkoutStepItems.forEach((item) => {
+    const itemStep = Number(item.dataset.checkoutStepItem);
+    item.classList.toggle("is-active", itemStep === step);
+    item.classList.toggle("is-complete", itemStep < step);
+  });
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function getCheckoutField(name) {
+  return inlineCheckout?.elements?.[name] || null;
+}
+
+function validateCheckoutFields(names) {
+  for (const name of names) {
+    const field = getCheckoutField(name);
+
+    if (field && !field.reportValidity()) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function updateAddressCard() {
+  const address = getCheckoutField("address")?.value.trim();
+  const number = getCheckoutField("number")?.value.trim();
+  const neighborhood = getCheckoutField("neighborhood")?.value.trim();
+  const city = getCheckoutField("city")?.value.trim();
+  const state = getCheckoutField("state")?.value.trim().toUpperCase();
+  const zipcode = getCheckoutField("zipcode")?.value.trim();
+
+  if (!checkoutAddressText || !checkoutAddressCard || !address || !number) {
+    return;
+  }
+
+  checkoutAddressText.innerHTML = `
+    <strong>${address}, ${number} - ${neighborhood}</strong>
+    <span>${city} - ${state} | CEP ${zipcode}</span>
+  `;
+  checkoutAddressCard.hidden = false;
+}
+
+function setupCheckoutSteps() {
+  checkoutNextButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const nextStep = Number(button.dataset.checkoutNext);
+
+      if (nextStep === 2 && !validateCheckoutFields(["name", "email", "document", "phone"])) {
+        return;
+      }
+
+      if (nextStep === 3) {
+        const validAddress = validateCheckoutFields([
+          "zipcode",
+          "address",
+          "number",
+          "neighborhood",
+          "recipient",
+          "city",
+          "state",
+        ]);
+
+        if (!validAddress) {
+          return;
+        }
+
+        updateAddressCard();
+      }
+
+      setCheckoutStep(nextStep);
+    });
+  });
+
+  checkoutBackButtons.forEach((button) => {
+    button.addEventListener("click", () => setCheckoutStep(Number(button.dataset.checkoutBack)));
+  });
+
+  checkoutSaveAddressButton?.addEventListener("click", () => {
+    const validAddress = validateCheckoutFields([
+      "zipcode",
+      "address",
+      "number",
+      "neighborhood",
+      "recipient",
+      "city",
+      "state",
+    ]);
+
+    if (validAddress) {
+      updateAddressCard();
+    }
+  });
+
+  setCheckoutStep(1);
+}
+
 function buildPixPayload(form) {
   const data = new FormData(form);
   const pixAmount = Math.round(productState.price * 0.95 * 100);
@@ -617,7 +695,6 @@ function buildPixPayload(form) {
       size: productState.size,
       sizeLabel: productState.sizeLabel,
       amount: pixAmount,
-      checkoutUrl: buildCheckoutUrl(),
     },
     customer: {
       name: data.get("name"),
@@ -631,9 +708,11 @@ function buildPixPayload(form) {
       number: data.get("number"),
       neighborhood: data.get("neighborhood"),
       complement: data.get("complement"),
+      recipient: data.get("recipient"),
       city: data.get("city"),
       state: String(data.get("state") || "").toUpperCase(),
     },
+    shippingMethod: data.get("shipping_method") || "correios",
     payment: "pix",
   };
 }
@@ -693,7 +772,7 @@ async function submitInlineCheckout(event) {
       pixResult.classList.add("is-open");
       pixResult.innerHTML = `
         <p>Nao foi possivel gerar o Pix automaticamente agora.</p>
-        <a href="${buildCheckoutUrl()}" target="_blank" rel="noopener">Continuar pelo checkout seguro</a>
+        <p>Confira a configuracao da sua API Pix e tente novamente.</p>
       `;
     }
   } finally {
@@ -1329,6 +1408,7 @@ reviewLightbox?.addEventListener("click", (event) => {
 setupCheckoutPageState();
 setupImageFallbacks();
 setupCheckoutMasks();
+setupCheckoutSteps();
 setupColorRibbon();
 setupBenefitsStory();
 initFaqAccordion();

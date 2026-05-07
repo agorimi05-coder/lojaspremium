@@ -3,15 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta
-      name="description"
-      content="Checkout seguro do Edredom Premium com pagamento Pix."
-    />
+    <meta name="description" content="Checkout seguro do Edredom Premium com pagamento Pix." />
     <title>Checkout | Edredom Premium</title>
     <link rel="preconnect" href="https://fonts.googleapis.com/" />
     <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&amp;family=Playfair+Display:ital,wght@0,700;1,700&amp;display=swap"
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&amp;display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="style.css" />
@@ -19,58 +16,85 @@
   </head>
   <body class="checkout-page">
     <header class="checkout-page-header">
-      <a class="brand" href="index.html#comprar" aria-label="Voltar para Edredom Premium">
-        <img src="img/logo.png" alt="Edredom Premium" class="brand-logo" />
+      <a class="checkout-logo" href="index.html#comprar" aria-label="Voltar para Edredom Premium">
+        <img src="img/logo.png" alt="Premium" />
       </a>
-      <span>Compra segura</span>
     </header>
 
     <main class="checkout-page-main">
       <section class="checkout-shell" aria-labelledby="checkout-title">
-        <div class="checkout-heading">
-          <p>Frete gratis apenas hoje</p>
-          <h1 id="checkout-title">Finalize seu pedido</h1>
+        <p class="checkout-advice">Basta preencher algumas informacoes para que possamos enviar o seu pedido.</p>
+
+        <div class="checkout-hero">
+          <div class="checkout-hero__copy">
+            <img src="img/logo.png" alt="" />
+            <h1 id="checkout-title">Quase la!</h1>
+            <p>Seu conforto te espera.</p>
+            <span>Pague com PIX e ganhe <strong>5% de desconto</strong></span>
+          </div>
+          <img class="checkout-hero__image" src="img/hero.png" alt="Edredom Premium" />
         </div>
 
-        <form class="inline-checkout checkout-page-form is-open" data-inline-checkout>
+        <form class="checkout-form" data-inline-checkout>
           <div class="checkout-steps" aria-label="Etapas do checkout">
-            <span class="is-active">1</span>
-            <span>2</span>
-            <span>3</span>
-          </div>
-
-          <div class="checkout-summary">
-            <img src="img/branco-nuvem.png" alt="Premium Edredom Termico 2 em 1" data-checkout-image />
-            <div>
-              <strong data-checkout-product>Premium Edredom Termico 2 em 1 - Branco Nuvem - Queen</strong>
-              <span data-checkout-total>R$ 140,51 no Pix</span>
+            <div class="checkout-step is-active" data-checkout-step-item="1">
+              <span>1</span>
+              <p>Informacoes pessoais</p>
+            </div>
+            <div class="checkout-step" data-checkout-step-item="2">
+              <span>2</span>
+              <p>Entrega</p>
+            </div>
+            <div class="checkout-step" data-checkout-step-item="3">
+              <span>3</span>
+              <p>Pagamento</p>
             </div>
           </div>
 
-          <div class="checkout-block">
-            <h3>Identificacao</h3>
+          <div class="checkout-summary">
+            <div>
+              <strong>RESUMO</strong>
+              <span data-checkout-product>Informacoes da sua compra</span>
+            </div>
+            <strong class="checkout-summary__total" data-checkout-total>R$ 140,51</strong>
+          </div>
+
+          <section class="checkout-panel is-active" data-checkout-panel="1">
+            <h2><span>1</span> Identifique-se</h2>
+            <p>Utilizaremos seu e-mail para: identificar seu perfil, historico de compra, notificacao de pedidos e carrinho de compras.</p>
+
             <label>
               Nome completo
-              <input type="text" name="name" autocomplete="name" required />
+              <input type="text" name="name" autocomplete="name" placeholder="ex.: Maria de Almeida Cruz" required />
             </label>
             <label>
               E-mail
               <input type="email" name="email" autocomplete="email" required />
             </label>
-            <div class="checkout-grid">
-              <label>
-                CPF
-                <input type="text" name="document" inputmode="numeric" autocomplete="off" maxlength="14" required data-mask-cpf />
-              </label>
-              <label>
-                Telefone
-                <input type="tel" name="phone" inputmode="tel" autocomplete="tel" maxlength="15" required data-mask-phone />
-              </label>
-            </div>
-          </div>
+            <label class="checkout-short-field">
+              CPF / CNPJ
+              <input type="text" name="document" inputmode="numeric" autocomplete="off" maxlength="14" required data-mask-cpf />
+            </label>
+            <label>
+              Celular / Whatsapp
+              <input type="tel" name="phone" inputmode="tel" autocomplete="tel" maxlength="15" placeholder="+55" required data-mask-phone />
+            </label>
 
-          <div class="checkout-block">
-            <h3>Entrega</h3>
+            <div class="checkout-discount">
+              <span>Pix</span>
+              <p>Voce ganhou <strong>5% de desconto</strong> pagando com Pix</p>
+            </div>
+
+            <button class="checkout-action" type="button" data-checkout-next="2">
+              Continuar
+              <span aria-hidden="true">-></span>
+            </button>
+          </section>
+
+          <section class="checkout-panel" data-checkout-panel="2" hidden>
+            <h2><span>2</span> Entrega</h2>
+            <p>Cadastre ou selecione um endereco</p>
+
             <div class="checkout-grid">
               <label>
                 CEP
@@ -91,7 +115,7 @@
                 <input type="text" name="neighborhood" required />
               </label>
               <label>
-                Complemento
+                Complemento <small>(opcional)</small>
                 <input type="text" name="complement" autocomplete="address-line3" />
               </label>
             </div>
@@ -105,30 +129,105 @@
                 <input type="text" name="state" autocomplete="address-level1" maxlength="2" required />
               </label>
             </div>
-          </div>
+            <label>
+              Destinatario
+              <input type="text" name="recipient" autocomplete="name" required />
+            </label>
 
-          <div class="checkout-block checkout-payment">
-            <h3>Pagamento</h3>
+            <button class="checkout-action" type="button" data-save-address>Salvar</button>
+
+            <div class="checkout-address-card" data-address-card hidden>
+              <span class="radio-dot is-checked"></span>
+              <p data-address-text></p>
+            </div>
+
+            <div class="checkout-shipping">
+              <p>Escolha uma forma de entrega:</p>
+              <label class="shipping-option">
+                <input type="radio" name="shipping_method" value="correios" checked />
+                <span>
+                  <strong>Correios</strong>
+                  <small>5 a 7 dias uteis</small>
+                </span>
+                <b>Gratis</b>
+              </label>
+              <label class="shipping-option">
+                <input type="radio" name="shipping_method" value="sedex" />
+                <span>
+                  <strong>SEDEX</strong>
+                  <small>3 a 5 dias uteis</small>
+                </span>
+                <b>R$ 32,98</b>
+              </label>
+            </div>
+
+            <button class="checkout-action" type="button" data-checkout-next="3">
+              Continuar
+              <span aria-hidden="true">-></span>
+            </button>
+          </section>
+
+          <section class="checkout-panel" data-checkout-panel="3" hidden>
+            <h2><span>3</span> Pagamento</h2>
+            <p>Escolha uma forma de pagamento</p>
+
+            <div class="payment-method payment-method--muted">
+              <span class="radio-dot"></span>
+              <div>
+                <strong>Cartao de credito</strong>
+                <div class="mini-flags">
+                  <span>AMEX</span><span>VISA</span><span>ELO</span><span>MC</span>
+                </div>
+              </div>
+            </div>
+
             <label class="payment-method is-selected">
               <input type="radio" name="payment" value="pix" checked />
               <span>
-                <strong>Pix</strong>
-                <small>Pagamento instantaneo com 5% OFF</small>
+                <strong>Pix <em>Pagamento instantaneo no Pix</em></strong>
+                <small>A confirmacao de pagamento e realizada em poucos minutos. Utilize o aplicativo do seu banco para pagar.</small>
+                <b data-checkout-total>R$ 140,51</b>
               </span>
             </label>
-          </div>
 
-          <button class="checkout-finish" type="submit" data-checkout-finish>
-            Finalizar Compra
-          </button>
+            <button class="checkout-finish" type="submit" data-checkout-finish>
+              Finalizar Compra
+            </button>
 
-          <div class="pix-result" data-pix-result aria-live="polite"></div>
-
-          <a class="checkout-fallback" href="#" target="_blank" rel="noopener" data-checkout-fallback>
-            Abrir checkout externo
-          </a>
+            <button class="checkout-back" type="button" data-checkout-back="2">Voltar para entrega</button>
+            <div class="pix-result" data-pix-result aria-live="polite"></div>
+          </section>
         </form>
+
+        <section class="checkout-priorities" aria-label="Diferenciais">
+          <article>
+            <strong>★★★★★</strong>
+            <h3>Envio rapido</h3>
+            <p>Entregamos para todo o Brasil com um prazo de entrega de 3 a 7 dias uteis.</p>
+          </article>
+          <article>
+            <strong>★★★★★</strong>
+            <h3>Suporte Humanizado</h3>
+            <p>Estamos disponiveis todos os dias, das 8h as 20h. Atendimento humanizado.</p>
+          </article>
+          <article>
+            <strong>★★★★★</strong>
+            <h3>Suporte WhatsApp</h3>
+            <p>Para suportes e duvidas fale conosco no WhatsApp: (47) 99700-6651</p>
+          </article>
+        </section>
       </section>
     </main>
+
+    <footer class="checkout-footer">
+      <h2>Formas de pagamento</h2>
+      <div class="footer-flags">
+        <span>AMEX</span><span>Aura</span><span>ELO</span><span>Discover</span><span>Hipercard</span><span>Mastercard</span><span>Visa</span><span>Pix</span>
+      </div>
+      <p>Premiumshop</p>
+      <p>Rua Jose Gomes da Silva Campos, 1482 - Sala 06, Parque das Americas, Uberaba - MG, CEP: 38045-255</p>
+      <p>CNPJ: 62.222.339/0002-70</p>
+      <p>Whatsapp: (11) 93773-4993 / Email: sac@premiumshop.com.br</p>
+    </footer>
   </body>
 </html>
