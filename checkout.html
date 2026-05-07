@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Checkout seguro do Edredom Premium com pagamento Pix."
+    />
+    <title>Checkout | Edredom Premium</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com/" />
+    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&amp;family=Playfair+Display:ital,wght@0,700;1,700&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+    <script src="script.js" defer></script>
+  </head>
+  <body class="checkout-page">
+    <header class="checkout-page-header">
+      <a class="brand" href="index.html#comprar" aria-label="Voltar para Edredom Premium">
+        <img src="img/logo.png" alt="Edredom Premium" class="brand-logo" />
+      </a>
+      <span>Compra segura</span>
+    </header>
+
+    <main class="checkout-page-main">
+      <section class="checkout-shell" aria-labelledby="checkout-title">
+        <div class="checkout-heading">
+          <p>Frete gratis apenas hoje</p>
+          <h1 id="checkout-title">Finalize seu pedido</h1>
+        </div>
+
+        <form class="inline-checkout checkout-page-form is-open" data-inline-checkout>
+          <div class="checkout-steps" aria-label="Etapas do checkout">
+            <span class="is-active">1</span>
+            <span>2</span>
+            <span>3</span>
+          </div>
+
+          <div class="checkout-summary">
+            <img src="img/branco-nuvem.png" alt="Premium Edredom Termico 2 em 1" data-checkout-image />
+            <div>
+              <strong data-checkout-product>Premium Edredom Termico 2 em 1 - Branco Nuvem - Queen</strong>
+              <span data-checkout-total>R$ 140,51 no Pix</span>
+            </div>
+          </div>
+
+          <div class="checkout-block">
+            <h3>Identificacao</h3>
+            <label>
+              Nome completo
+              <input type="text" name="name" autocomplete="name" required />
+            </label>
+            <label>
+              E-mail
+              <input type="email" name="email" autocomplete="email" required />
+            </label>
+            <div class="checkout-grid">
+              <label>
+                CPF
+                <input type="text" name="document" inputmode="numeric" autocomplete="off" maxlength="14" required data-mask-cpf />
+              </label>
+              <label>
+                Telefone
+                <input type="tel" name="phone" inputmode="tel" autocomplete="tel" maxlength="15" required data-mask-phone />
+              </label>
+            </div>
+          </div>
+
+          <div class="checkout-block">
+            <h3>Entrega</h3>
+            <div class="checkout-grid">
+              <label>
+                CEP
+                <input type="text" name="zipcode" inputmode="numeric" autocomplete="postal-code" maxlength="9" required data-mask-cep />
+              </label>
+              <label>
+                Numero
+                <input type="text" name="number" autocomplete="address-line2" required />
+              </label>
+            </div>
+            <label>
+              Endereco
+              <input type="text" name="address" autocomplete="street-address" required />
+            </label>
+            <div class="checkout-grid">
+              <label>
+                Bairro
+                <input type="text" name="neighborhood" required />
+              </label>
+              <label>
+                Complemento
+                <input type="text" name="complement" autocomplete="address-line3" />
+              </label>
+            </div>
+            <div class="checkout-grid">
+              <label>
+                Cidade
+                <input type="text" name="city" autocomplete="address-level2" required />
+              </label>
+              <label>
+                UF
+                <input type="text" name="state" autocomplete="address-level1" maxlength="2" required />
+              </label>
+            </div>
+          </div>
+
+          <div class="checkout-block checkout-payment">
+            <h3>Pagamento</h3>
+            <label class="payment-method is-selected">
+              <input type="radio" name="payment" value="pix" checked />
+              <span>
+                <strong>Pix</strong>
+                <small>Pagamento instantaneo com 5% OFF</small>
+              </span>
+            </label>
+          </div>
+
+          <button class="checkout-finish" type="submit" data-checkout-finish>
+            Finalizar Compra
+          </button>
+
+          <div class="pix-result" data-pix-result aria-live="polite"></div>
+
+          <a class="checkout-fallback" href="#" target="_blank" rel="noopener" data-checkout-fallback>
+            Abrir checkout externo
+          </a>
+        </form>
+      </section>
+    </main>
+  </body>
+</html>

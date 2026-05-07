@@ -19,6 +19,40 @@ const checkoutLinks = {
   },
 };
 
+const productCatalog = {
+  branco: {
+    label: "Branco Nuvem",
+    image: "img/branco-nuvem.png",
+  },
+  rosa: {
+    label: "Rosa Aconchego",
+    image: "img/rosa-aconchego.png",
+  },
+  cinza: {
+    label: "Cinza Serenity",
+    image: "img/cinza-serenity.png",
+  },
+};
+
+const sizeCatalog = {
+  solteiro: {
+    label: "Solteiro (150 x 220 cm)",
+    price: 99.9,
+  },
+  casal: {
+    label: "Casal (180 x 220 cm)",
+    price: 127.9,
+  },
+  queen: {
+    label: "Queen (220 x 240 cm)",
+    price: 147.9,
+  },
+  king: {
+    label: "King (240 x 260 cm)",
+    price: 167.9,
+  },
+};
+
 const scrollLinks = document.querySelectorAll("[data-scroll]");
 const animatedElements = document.querySelectorAll("[data-animate]");
 const menuOpenButton = document.querySelector("[data-menu-open]");
@@ -492,17 +526,22 @@ function buildCheckoutUrl() {
   return finalUrl.toString();
 }
 
-function goToCheckout() {
-  if (!inlineCheckout) {
-    window.location.href = buildCheckoutUrl();
-    return;
-  }
+function buildInternalCheckoutUrl() {
+  const finalUrl = new URL("checkout.html", window.location.href);
+  const currentParams = new URLSearchParams(window.location.search);
 
-  inlineCheckout.classList.add("is-open");
-  inlineCheckout.setAttribute("aria-hidden", "false");
-  checkoutButton?.classList.add("is-hidden");
-  updateProductPricing();
-  inlineCheckout.querySelector("input")?.focus({ preventScroll: true });
+  currentParams.forEach((value, key) => {
+    finalUrl.searchParams.set(key, value);
+  });
+
+  finalUrl.searchParams.set("color", productState.color);
+  finalUrl.searchParams.set("size", productState.size);
+  finalUrl.searchParams.set("product", checkoutLinks[productState.color]?.[productState.size] || "");
+  return finalUrl.toString();
+}
+
+function goToCheckout() {
+  window.location.href = buildInternalCheckoutUrl();
 }
 
 function onlyDigits(value) {
@@ -543,6 +582,28 @@ function setupCheckoutMasks() {
   inlineCheckout?.querySelector("[data-mask-cep]")?.addEventListener("input", (event) => {
     event.target.value = applyCepMask(event.target.value);
   });
+}
+
+function setupCheckoutPageState() {
+  const params = new URLSearchParams(window.location.search);
+  const color = params.get("color");
+  const size = params.get("size");
+
+  if (color && productCatalog[color]) {
+    productState.color = color;
+    productState.colorLabel = productCatalog[color].label;
+    productState.image = productCatalog[color].image;
+  }
+
+  if (size && sizeCatalog[size]) {
+    productState.size = size;
+    productState.sizeLabel = sizeCatalog[size].label;
+    productState.price = sizeCatalog[size].price;
+  }
+
+  if (checkoutImage) {
+    checkoutImage.src = productState.image;
+  }
 }
 
 function buildPixPayload(form) {
@@ -1265,6 +1326,7 @@ reviewLightbox?.addEventListener("click", (event) => {
   }
 });
 
+setupCheckoutPageState();
 setupImageFallbacks();
 setupCheckoutMasks();
 setupColorRibbon();
