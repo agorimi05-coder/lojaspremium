@@ -5209,6 +5209,10 @@ body.menu-open .mobile-menu {
   color: #36c879;
 }
 
+.payment-order-summary dd.is-free-shipping {
+  color: #36c879;
+}
+
 .payment-order-total {
   margin-top: 4px;
   padding-top: 12px;

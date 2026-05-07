@@ -487,6 +487,7 @@ function updateProductPricing() {
 
   if (checkoutOrderShipping) {
     checkoutOrderShipping.textContent = productState.shipping > 0 ? formatCurrency(productState.shipping) : "Gratis";
+    checkoutOrderShipping.classList.toggle("is-free-shipping", productState.shipping === 0);
   }
 
   if (checkoutOrderTotal) {
@@ -784,7 +785,6 @@ function setupCheckoutSteps() {
           "address",
           "number",
           "neighborhood",
-          "recipient",
           "city",
           "state",
         ]);
@@ -810,7 +810,6 @@ function setupCheckoutSteps() {
       "address",
       "number",
       "neighborhood",
-      "recipient",
       "city",
       "state",
     ]);
@@ -851,7 +850,6 @@ function buildPixPayload(form) {
       number: data.get("number"),
       neighborhood: data.get("neighborhood"),
       complement: data.get("complement"),
-      recipient: data.get("recipient"),
       city: data.get("city"),
       state: String(data.get("state") || "").toUpperCase(),
     },
