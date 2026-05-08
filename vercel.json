@@ -4,6 +4,10 @@
     {
       "source": "/checkout",
       "destination": "/checkout.html"
+    },
+    {
+      "source": "/obrigado",
+      "destination": "/obrigado.html"
     }
   ]
 }

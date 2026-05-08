@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Pedido aprovado no Edredom Premium." />
+    <title>Pedido aprovado | Edredom Premium</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com/" />
+    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+    <script src="utmify-gambiarra.js"></script>
+    <script>
+      window.pixelId = "69eee39f2ea0d8d4b3dd0239";
+      var a = document.createElement("script");
+      a.setAttribute("async", "");
+      a.setAttribute("defer", "");
+      a.setAttribute("src", "https://cdn.utmify.com.br/scripts/pixel/pixel.js");
+      document.head.appendChild(a);
+    </script>
+    <script>
+      !(function (f, b, e, v, n, t, s) {
+        if (f.fbq) return;
+        n = f.fbq = function () {
+          n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments);
+        };
+        if (!f._fbq) f._fbq = n;
+        n.push = n;
+        n.loaded = true;
+        n.version = "2.0";
+        n.queue = [];
+        t = b.createElement(e);
+        t.async = true;
+        t.src = v;
+        s = b.getElementsByTagName(e)[0];
+        s.parentNode.insertBefore(t, s);
+      })(window, document, "script", "https://connect.facebook.net/en_US/fbevents.js");
+      fbq("init", "981352047761884");
+      fbq("track", "PageView");
+    </script>
+    <script
+      src="https://cdn.utmify.com.br/scripts/utms/latest.js"
+      data-utmify-prevent-xcod-sck
+      data-utmify-prevent-subids
+      async
+      defer
+    ></script>
+  </head>
+  <body class="checkout-page thank-you-page">
+    <header class="checkout-page-header">
+      <a class="checkout-logo" href="index.html" aria-label="Voltar para Edredom Premium">
+        <img src="img/logo.png" alt="Premium" />
+      </a>
+    </header>
+
+    <main class="thank-you-main">
+      <section class="thank-you-card">
+        <span class="thank-you-status">Pedido aprovado</span>
+        <h1>Obrigado pela sua compra!</h1>
+        <p>Recebemos a confirmacao do pagamento Pix. Em breve voce recebera os detalhes do pedido no seu e-mail.</p>
+
+        <div class="thank-you-summary">
+          <img src="img/branco-nuvem.png" alt="Edredom Premium" data-thank-image />
+          <div>
+            <strong data-thank-product>Premium Edredom Termico 2 em 1</strong>
+            <span data-thank-variant>Pedido confirmado</span>
+            <b data-thank-total>R$ 0,00</b>
+          </div>
+        </div>
+
+        <a class="checkout-action thank-you-action" href="index.html#comprar">Voltar para a loja</a>
+      </section>
+    </main>
+
+    <script>
+      (function () {
+        var paidStatuses = ["paid", "approved", "completed", "confirmed", "success", "succeeded", "received"];
+        var params = new URLSearchParams(window.location.search);
+        var transactionId = params.get("transactionId") || "";
+        var status = String(params.get("status") || "paid").toLowerCase();
+        var value = Number(params.get("value") || 0);
+        var contentId = params.get("content_id") || "premium-edredom";
+        var contentName = params.get("content_name") || "Premium Edredom Termico 2 em 1";
+        var order = null;
+
+        try {
+          var raw = sessionStorage.getItem("premiumPaidOrder:" + transactionId) || sessionStorage.getItem("premiumLastOrder");
+          order = raw ? JSON.parse(raw) : null;
+        } catch (error) {}
+
+        if (order) {
+          value = Number(order.amount || value);
+          contentId = order.product?.id || contentId;
+          contentName = order.product?.name || contentName;
+
+          var image = document.querySelector("[data-thank-image]");
+          var product = document.querySelector("[data-thank-product]");
+          var variant = document.querySelector("[data-thank-variant]");
+
+          if (image && order.product?.image) image.src = order.product.image;
+          if (product) product.textContent = contentName;
+          if (variant && order.product?.variant) variant.textContent = order.product.variant;
+        }
+
+        var total = document.querySelector("[data-thank-total]");
+        if (total) {
+          total.textContent = Number(value || 0).toLocaleString("pt-BR", {
+            style: "currency",
+            currency: "BRL",
+          });
+        }
+
+        if (!paidStatuses.includes(status)) {
+          return;
+        }
+
+        var purchaseKey = "premiumPurchaseTracked:" + (transactionId || contentId + ":" + value);
+        try {
+          if (sessionStorage.getItem(purchaseKey)) return;
+        } catch (error) {}
+
+        var attempts = 0;
+        function firePurchase() {
+          attempts += 1;
+
+          if (typeof window.fbq === "function") {
+            window.fbq("track", "Purchase", {
+              content_type: "product",
+              content_ids: [contentId],
+              content_name: contentName,
+              num_items: 1,
+              currency: "BRL",
+              value: value,
+              order_id: transactionId,
+              payment_method: "pix",
+            });
+
+            try {
+              sessionStorage.setItem(purchaseKey, "true");
+            } catch (error) {}
+            return;
+          }
+
+          if (attempts < 20) {
+            window.setTimeout(firePurchase, 250);
+          }
+        }
+
+        firePurchase();
+      })();
+    </script>
+  </body>
+</html>

@@ -5368,6 +5368,88 @@ body.menu-open .mobile-menu {
   line-height: 1.35;
 }
 
+.thank-you-main {
+  width: min(100%, 520px);
+  margin: 0 auto;
+  padding: 24px 22px 54px;
+}
+
+.thank-you-card {
+  display: grid;
+  gap: 18px;
+  padding: 30px 22px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 14px 34px rgba(24, 24, 32, 0.1);
+}
+
+.thank-you-status {
+  width: fit-content;
+  padding: 7px 12px;
+  color: #1f9d5a;
+  background: #eafff1;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.thank-you-card h1 {
+  margin: 0;
+  color: #242232;
+  font-size: 1.8rem;
+}
+
+.thank-you-card p {
+  margin: 0;
+  color: #696574;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.thank-you-summary {
+  display: grid;
+  grid-template-columns: 86px 1fr;
+  gap: 14px;
+  align-items: center;
+  padding: 14px;
+  background: #f7f4fb;
+  border-radius: 8px;
+}
+
+.thank-you-summary img {
+  width: 86px;
+  height: 86px;
+  object-fit: cover;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.thank-you-summary div {
+  display: grid;
+  gap: 5px;
+}
+
+.thank-you-summary strong {
+  color: #242232;
+  line-height: 1.2;
+}
+
+.thank-you-summary span {
+  color: #716d80;
+  font-size: 0.92rem;
+}
+
+.thank-you-summary b {
+  color: #36c879;
+  font-size: 1.12rem;
+}
+
+.thank-you-action {
+  margin-top: 4px;
+  text-align: center;
+  text-decoration: none;
+}
+
 @media (min-width: 560px) {
   .checkout-grid {
     grid-template-columns: 1fr 1fr;

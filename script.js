@@ -107,6 +107,8 @@ const productState = {
   shippingLabel: "Gratis",
 };
 
+const paidPixStatuses = ["paid", "approved", "completed", "confirmed", "success", "succeeded", "received"];
+
 const reviews = [
   {
     name: "Nat Barbosa",
@@ -265,6 +267,83 @@ function formatCurrency(value) {
     style: "currency",
     currency: "BRL",
   }).format(value);
+}
+
+function getCheckoutTotals() {
+  const pixPrice = Math.round(productState.price * 0.95 * 100) / 100;
+  const pixSaving = Math.round((productState.price - pixPrice) * 100) / 100;
+  const finalTotal = Math.round((pixPrice + productState.shipping) * 100) / 100;
+
+  return {
+    subtotal: productState.price,
+    discount: pixSaving,
+    shipping: productState.shipping,
+    total: finalTotal,
+  };
+}
+
+function getTrackingProduct(value) {
+  return {
+    id: `premium-edredom-${productState.color}-${productState.size}`,
+    name: `Premium Edredom Termico 2 em 1 - ${productState.colorLabel} - ${productState.sizeLabel}`,
+    quantity: 1,
+    value: Number(value || getCheckoutTotals().total),
+  };
+}
+
+function trackMetaEvent(eventName, product, value, options = {}) {
+  if (!eventName || !product?.id) {
+    return;
+  }
+
+  const onceKey = options.onceKey || `${eventName}:${product.id}`;
+  window.__premiumMetaEvents = window.__premiumMetaEvents || {};
+
+  if (options.once !== false && window.__premiumMetaEvents[onceKey]) {
+    return;
+  }
+
+  let attempts = 0;
+  const fire = () => {
+    attempts += 1;
+
+    if (typeof window.fbq === "function") {
+      window.fbq("track", eventName, {
+        content_type: "product",
+        content_ids: [product.id],
+        content_name: product.name,
+        num_items: Number(product.quantity || 1),
+        currency: "BRL",
+        value: Number(value || product.value || 0),
+        ...options.extra,
+      });
+      window.__premiumMetaEvents[onceKey] = true;
+      return;
+    }
+
+    if (attempts < 20) {
+      window.setTimeout(fire, 250);
+    }
+  };
+
+  fire();
+}
+
+function trackInitiateCheckout() {
+  const totals = getCheckoutTotals();
+  trackMetaEvent("InitiateCheckout", getTrackingProduct(totals.total), totals.total, {
+    onceKey: "InitiateCheckout",
+  });
+}
+
+function trackAddPaymentInfo() {
+  const totals = getCheckoutTotals();
+  trackMetaEvent("AddPaymentInfo", getTrackingProduct(totals.total), totals.total, {
+    onceKey: "AddPaymentInfo",
+    extra: {
+      payment_method: "pix",
+    },
+  });
 }
 
 function escapeHtml(value) {
@@ -436,9 +515,10 @@ function handleMainGalleryPointerUp(event) {
 }
 
 function updateProductPricing() {
-  const pixPrice = Math.round(productState.price * 0.95 * 100) / 100;
-  const pixSaving = Math.round((productState.price - pixPrice) * 100) / 100;
-  const finalTotal = Math.round((pixPrice + productState.shipping) * 100) / 100;
+  const totals = getCheckoutTotals();
+  const pixPrice = productState.price - totals.discount;
+  const pixSaving = totals.discount;
+  const finalTotal = totals.total;
   const installment = Math.round((productState.price / 12) * 100) / 100;
 
   if (priceText) {
@@ -815,6 +895,7 @@ function setupCheckoutSteps() {
         }
 
         updateAddressCard();
+        trackAddPaymentInfo();
       }
 
       setCheckoutStep(nextStep);
@@ -841,14 +922,15 @@ function setupCheckoutSteps() {
   });
 
   setCheckoutStep(1);
+  trackInitiateCheckout();
 }
 
 function buildPixPayload(form) {
   const data = new FormData(form);
-  const pixAmount = Math.round(productState.price * 0.95 * 100);
-  const totalAmount = Math.round((pixAmount / 100 + productState.shipping) * 100);
-  const amount = totalAmount / 100;
+  const totals = getCheckoutTotals();
+  const amount = totals.total;
   const productName = `Premium Edredom Termico 2 em 1 - ${productState.colorLabel} - ${productState.sizeLabel}`;
+  const productId = `premium-edredom-${productState.color}-${productState.size}`;
 
   return {
     amount,
@@ -869,7 +951,7 @@ function buildPixPayload(form) {
     },
     items: [
       {
-        id: `${productState.color}-${productState.size}`,
+        id: productId,
         name: productName,
         quantity: 1,
         unitPrice: amount,
@@ -877,7 +959,121 @@ function buildPixPayload(form) {
       },
     ],
     attribution: getStoredAttribution(),
+    summary: {
+      subtotal: totals.subtotal,
+      discount: totals.discount,
+      shipping: totals.shipping,
+      shippingLabel: productState.shippingLabel,
+      total: totals.total,
+      image: productState.image,
+    },
   };
+}
+
+function getPixTransactionId(data) {
+  return (
+    data?.transactionId ||
+    data?.id ||
+    data?.saleId ||
+    data?.sale_id ||
+    data?.paymentId ||
+    data?.payment_id ||
+    ""
+  );
+}
+
+function savePendingOrder(transactionId, payload, status = "pending") {
+  if (!transactionId || !payload?.items?.[0]) {
+    return;
+  }
+
+  const item = payload.items[0];
+  const order = {
+    transactionId,
+    status,
+    amount: payload.amount,
+    product: {
+      id: item.id,
+      name: item.name,
+      quantity: item.quantity || 1,
+      image: payload.summary?.image || productState.image,
+      variant: `${productState.colorLabel} - ${productState.sizeLabel}`,
+    },
+    summary: payload.summary || getCheckoutTotals(),
+    createdAt: new Date().toISOString(),
+  };
+
+  try {
+    window.sessionStorage.setItem(`premiumPendingOrder:${transactionId}`, JSON.stringify(order));
+    window.sessionStorage.setItem("premiumLastOrder", JSON.stringify(order));
+  } catch (error) {}
+}
+
+function savePaidOrder(transactionId, payload, status = "paid") {
+  if (!transactionId) {
+    return;
+  }
+
+  try {
+    const raw = window.sessionStorage.getItem(`premiumPendingOrder:${transactionId}`);
+    const order = raw ? JSON.parse(raw) : {};
+    const paidOrder = {
+      ...order,
+      transactionId,
+      status,
+      amount: payload?.amount || order.amount || getCheckoutTotals().total,
+      paidAt: new Date().toISOString(),
+    };
+
+    window.sessionStorage.setItem(`premiumPaidOrder:${transactionId}`, JSON.stringify(paidOrder));
+    window.sessionStorage.setItem("premiumLastOrder", JSON.stringify(paidOrder));
+  } catch (error) {}
+}
+
+function redirectToThankYou(transactionId, payload, status = "paid") {
+  savePaidOrder(transactionId, payload, status);
+
+  const item = payload?.items?.[0] || {};
+  const params = new URLSearchParams({
+    transactionId: transactionId || "",
+    value: String(payload?.amount || getCheckoutTotals().total),
+    content_id: item.id || getTrackingProduct().id,
+    content_name: item.name || getTrackingProduct().name,
+    status,
+  });
+
+  window.location.href = `obrigado.html?${params.toString()}`;
+}
+
+function isPaidPixStatus(data) {
+  const status = String(data?.status || data?.paymentStatus || "").toLowerCase();
+  return paidPixStatuses.includes(status) || Boolean(data?.paidAt || data?.paid_at);
+}
+
+function pollPixStatus(transactionId, payload) {
+  if (!transactionId) {
+    return;
+  }
+
+  let attempts = 0;
+  const timer = window.setInterval(async () => {
+    attempts += 1;
+
+    if (attempts > 90) {
+      window.clearInterval(timer);
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/pix/status?transactionId=${encodeURIComponent(transactionId)}`);
+      const data = await response.json();
+
+      if (isPaidPixStatus(data)) {
+        window.clearInterval(timer);
+        redirectToThankYou(transactionId, payload, data.status || "paid");
+      }
+    } catch (error) {}
+  }, 5000);
 }
 
 function renderPixResult(data) {
@@ -916,6 +1112,7 @@ async function submitInlineCheckout(event) {
   }
 
   const payload = buildPixPayload(inlineCheckout);
+  trackAddPaymentInfo();
 
   checkoutFinishButton?.setAttribute("disabled", "true");
   if (pixResult) {
@@ -924,7 +1121,18 @@ async function submitInlineCheckout(event) {
   }
 
   try {
-    renderPixResult(await createPixWithFallback(payload));
+    const data = await createPixWithFallback(payload);
+    const transactionId = getPixTransactionId(data);
+
+    savePendingOrder(transactionId, payload, data.status || "pending");
+    renderPixResult(data);
+
+    if (isPaidPixStatus(data)) {
+      redirectToThankYou(transactionId, payload, data.status || "paid");
+      return;
+    }
+
+    pollPixStatus(transactionId, payload);
   } catch (error) {
     if (pixResult) {
       pixResult.classList.add("is-open");
