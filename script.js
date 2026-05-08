@@ -1089,6 +1089,12 @@ function pollPixStatus(transactionId, payload) {
 function getPixQrMarkup(data, pixCode) {
   const qrSvg = data.qrCodeSvg || data.qr_code_svg || "";
   const rawQrCode = data.qrCode || data.qr_code_base64 || data.qrCodeBase64 || "";
+  const qrFallbackOne = pixCode
+    ? `https://quickchart.io/qr?size=280&margin=2&text=${encodeURIComponent(pixCode)}`
+    : "";
+  const qrFallbackTwo = pixCode
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=280x280&margin=10&data=${encodeURIComponent(pixCode)}`
+    : "";
 
   if (qrSvg) {
     return `<div class="pix-popup__qr pix-popup__qr-svg" aria-label="QR Code Pix">${qrSvg}</div>`;
@@ -1098,15 +1104,13 @@ function getPixQrMarkup(data, pixCode) {
     ? rawQrCode.startsWith("data:") || rawQrCode.startsWith("http")
       ? rawQrCode
       : `data:image/png;base64,${rawQrCode}`
-    : pixCode
-      ? `https://api.qrserver.com/v1/create-qr-code/?size=280x280&margin=10&data=${encodeURIComponent(pixCode)}`
-      : "";
+    : qrFallbackOne;
 
   if (!qrSource) {
     return `<div class="pix-popup__missing">QR Code indisponivel. Use o Pix copia e cola abaixo.</div>`;
   }
 
-  return `<img class="pix-popup__qr" src="${qrSource}" alt="QR Code Pix" />`;
+  return `<img class="pix-popup__qr" src="${qrSource}" alt="QR Code Pix" data-qr-fallback="${qrFallbackTwo}" />`;
 }
 
 function startPixCountdown() {
@@ -1150,6 +1154,24 @@ function startPixCountdown() {
 function setupPixPopupActions(pixCode) {
   const copyButton = document.querySelector("[data-copy-pix]");
   const textarea = document.querySelector("[data-pix-copy-code]");
+  const qrImage = document.querySelector(".pix-popup__qr[data-qr-fallback]");
+
+  qrImage?.addEventListener("error", () => {
+    const fallback = qrImage.dataset.qrFallback;
+
+    if (fallback && qrImage.src !== fallback) {
+      qrImage.src = fallback;
+      qrImage.removeAttribute("data-qr-fallback");
+      return;
+    }
+
+    qrImage.replaceWith(
+      Object.assign(document.createElement("div"), {
+        className: "pix-popup__missing",
+        textContent: "QR Code indisponivel. Use o Pix copia e cola abaixo.",
+      }),
+    );
+  });
 
   copyButton?.addEventListener("click", async () => {
     if (!textarea) {
