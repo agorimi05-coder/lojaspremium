@@ -155,7 +155,7 @@ async function createPixCharge(input) {
     title: normalizeString(item.name) || "Edredom Premium",
     quantity: Number(item.quantity || 1),
     unitPrice: toCents(Number(item.unitPrice || item.totalPrice || parsedAmount)),
-    tangible: true,
+    tangible: false,
   }));
 
   if (!items.length || items.some((item) => item.unitPrice <= 0)) {
@@ -217,6 +217,7 @@ async function createPixCharge(input) {
 
     const rawText = await response.text();
     const payload = safeJsonParse(rawText) || {};
+    console.log("BLACKCAT CREATE SALE STATUS", response.status);
     return { response, payload, rawText };
   };
 
@@ -228,6 +229,11 @@ async function createPixCharge(input) {
   }
 
   if (!attempt.response.ok || attempt.payload?.success === false) {
+    console.warn(
+      "BLACKCAT CREATE SALE ERROR",
+      JSON.stringify(attempt.payload && Object.keys(attempt.payload).length ? attempt.payload : attempt.rawText),
+    );
+
     return {
       status: attempt.response.ok ? 400 : attempt.response.status,
       body: {
