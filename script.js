@@ -1071,7 +1071,7 @@ function redirectToThankYou(transactionId, payload, status = "paid") {
 
 function isPaidPixStatus(data) {
   const status = String(data?.status || data?.paymentStatus || "").toLowerCase();
-  return paidPixStatuses.includes(status) || Boolean(data?.paidAt || data?.paid_at);
+  return paidPixStatuses.includes(status);
 }
 
 function pollPixStatus(transactionId, payload) {
