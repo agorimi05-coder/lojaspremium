@@ -108,7 +108,7 @@ const productState = {
   shippingLabel: "Gratis",
 };
 
-const paidPixStatuses = ["paid", "approved", "completed", "confirmed", "success", "succeeded", "received"];
+const paidPixStatuses = ["paid", "approved", "completed", "confirmed"];
 
 const reviews = [
   {

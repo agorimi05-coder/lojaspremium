@@ -77,7 +77,7 @@
 
     <script>
       (function () {
-        var paidStatuses = ["paid", "approved", "completed", "confirmed", "success", "succeeded", "received"];
+        var paidStatuses = ["paid", "approved", "completed", "confirmed"];
         var params = new URLSearchParams(window.location.search);
         var transactionId = params.get("transactionId") || "";
         var value = Number(params.get("value") || 0);
