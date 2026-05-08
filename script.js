@@ -775,16 +775,20 @@ function getStoredAttribution() {
     typeof window.getUtmifyGambiarraParams === "function"
       ? window.getUtmifyGambiarraParams()
       : {};
+  const storageKeys = ["urlParams", "imperialTrackingParams", "premium-utmify-attribution"];
+  const savedParams = {};
 
-  try {
-    const raw = window.localStorage.getItem("premium-utmify-attribution");
-    return {
-      ...fallbackParams,
-      ...(raw ? JSON.parse(raw) : {}),
-    };
-  } catch (error) {
-    return fallbackParams || {};
-  }
+  storageKeys.forEach((key) => {
+    try {
+      const raw = window.localStorage.getItem(key);
+      Object.assign(savedParams, raw ? JSON.parse(raw) : {});
+    } catch (error) {}
+  });
+
+  return {
+    ...(fallbackParams || {}),
+    ...savedParams,
+  };
 }
 
 function setupCheckoutSteps() {
