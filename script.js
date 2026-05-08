@@ -872,6 +872,22 @@ function getStoredAttribution() {
   };
 }
 
+function getProductAttribution() {
+  const totals = getCheckoutTotals();
+  const product = getTrackingProduct(totals.total);
+
+  return {
+    productName: product.name,
+    product_name: product.name,
+    content_name: product.name,
+    productId: product.id,
+    product_id: product.id,
+    content_id: product.id,
+    value: totals.total,
+    currency: "BRL",
+  };
+}
+
 function setupCheckoutSteps() {
   if (!inlineCheckout || !checkoutPanels.length) {
     return;
@@ -963,7 +979,10 @@ function buildPixPayload(form) {
         totalPrice: amount,
       },
     ],
-    attribution: getStoredAttribution(),
+    attribution: {
+      ...getStoredAttribution(),
+      ...getProductAttribution(),
+    },
     summary: {
       subtotal: totals.subtotal,
       discount: totals.discount,

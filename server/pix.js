@@ -198,6 +198,10 @@ async function createPixCharge(input) {
     externalRef: `edredom-${Date.now()}`,
     metadata: JSON.stringify({
       source: "lojaspremiium",
+      productName: attribution.productName || attribution.product_name || "",
+      productId: attribution.productId || attribution.product_id || "",
+      value: attribution.value || parsedAmount,
+      currency: attribution.currency || "BRL",
       utm_source: attribution.utm_source || "",
       utm_medium: attribution.utm_medium || "",
       utm_campaign: attribution.utm_campaign || "",
