@@ -872,6 +872,10 @@ function getStoredAttribution() {
 }
 
 function setupCheckoutSteps() {
+  if (!inlineCheckout || !checkoutPanels.length) {
+    return;
+  }
+
   checkoutNextButtons.forEach((button) => {
     button.addEventListener("click", () => {
       const nextStep = Number(button.dataset.checkoutNext);
