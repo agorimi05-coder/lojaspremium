@@ -59,13 +59,14 @@ function safeJsonParse(text) {
 function normalizeBlackcatResponse(payload, fallbackAmount) {
   const data = payload?.data || payload || {};
   const paymentData = data?.paymentData || {};
-  const rawQrCode =
+  const rawQrCode = String(
     paymentData?.qrCodeBase64 ||
-    paymentData?.qrCodeBase64Image ||
-    paymentData?.qr_code_base64 ||
-    paymentData?.qrCodeImage ||
-    paymentData?.qr_code_image ||
-    "";
+      paymentData?.qrCodeBase64Image ||
+      paymentData?.qr_code_base64 ||
+      paymentData?.qrCodeImage ||
+      paymentData?.qr_code_image ||
+      "",
+  ).trim();
 
   const qrCode =
     typeof rawQrCode === "string" && rawQrCode.startsWith("data:image")
@@ -76,6 +77,7 @@ function normalizeBlackcatResponse(payload, fallbackAmount) {
 
   return {
     qrCode,
+    qrCodeSvg: paymentData?.qrCodeSvg || paymentData?.qr_code_svg || "",
     qrCodeBase64: qrCode,
     copyAndPaste: paymentData?.copyPaste || paymentData?.qrCode || "",
     copyPaste: paymentData?.copyPaste || paymentData?.qrCode || "",

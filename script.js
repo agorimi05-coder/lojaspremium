@@ -94,6 +94,7 @@ let mainGalleryStartY = 0;
 let mainGalleryDidSwipe = false;
 let benefitsAutoScroll = null;
 let currentReviewPage = 1;
+let pixCountdownTimer = null;
 const submittedReviews = [];
 
 const productState = {
@@ -1071,6 +1072,11 @@ function pollPixStatus(transactionId, payload) {
     try {
       const response = await fetch(`/api/pix/status?transactionId=${encodeURIComponent(transactionId)}`);
       const data = await response.json();
+      const statusText = document.getElementById("pix-status-text");
+
+      if (statusText && data.status) {
+        statusText.textContent = `Status: ${data.status}. Aguardando confirmacao automatica.`;
+      }
 
       if (isPaidPixStatus(data)) {
         window.clearInterval(timer);
@@ -1080,12 +1086,97 @@ function pollPixStatus(transactionId, payload) {
   }, 5000);
 }
 
+function getPixQrMarkup(data, pixCode) {
+  const qrSvg = data.qrCodeSvg || data.qr_code_svg || "";
+  const rawQrCode = data.qrCode || data.qr_code_base64 || data.qrCodeBase64 || "";
+
+  if (qrSvg) {
+    return `<div class="pix-popup__qr pix-popup__qr-svg" aria-label="QR Code Pix">${qrSvg}</div>`;
+  }
+
+  const qrSource = rawQrCode
+    ? rawQrCode.startsWith("data:") || rawQrCode.startsWith("http")
+      ? rawQrCode
+      : `data:image/png;base64,${rawQrCode}`
+    : pixCode
+      ? `https://api.qrserver.com/v1/create-qr-code/?size=280x280&margin=10&data=${encodeURIComponent(pixCode)}`
+      : "";
+
+  if (!qrSource) {
+    return `<div class="pix-popup__missing">QR Code indisponivel. Use o Pix copia e cola abaixo.</div>`;
+  }
+
+  return `<img class="pix-popup__qr" src="${qrSource}" alt="QR Code Pix" />`;
+}
+
+function startPixCountdown() {
+  const countdown = document.querySelector("[data-pix-countdown]");
+  const urgency = document.querySelector("[data-pix-urgency]");
+  const expiresAt = Date.now() + 15 * 60 * 1000;
+
+  if (!countdown) {
+    return;
+  }
+
+  if (pixCountdownTimer) {
+    window.clearInterval(pixCountdownTimer);
+  }
+
+  const update = () => {
+    const remaining = Math.max(0, expiresAt - Date.now());
+    const minutes = Math.floor(remaining / 60000);
+    const seconds = Math.floor((remaining % 60000) / 1000);
+
+    countdown.textContent = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+
+    if (urgency) {
+      urgency.textContent =
+        remaining > 0
+          ? "Seu desconto Pix fica reservado enquanto o cronometro estiver ativo."
+          : "O tempo acabou. Gere um novo Pix para manter o pedido reservado.";
+    }
+
+    if (remaining <= 0) {
+      window.clearInterval(pixCountdownTimer);
+      pixCountdownTimer = null;
+      pixResult?.classList.add("is-expired");
+    }
+  };
+
+  update();
+  pixCountdownTimer = window.setInterval(update, 1000);
+}
+
+function setupPixPopupActions(pixCode) {
+  const copyButton = document.querySelector("[data-copy-pix]");
+  const textarea = document.querySelector("[data-pix-copy-code]");
+
+  copyButton?.addEventListener("click", async () => {
+    if (!textarea) {
+      return;
+    }
+
+    textarea.select();
+
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(pixCode);
+      } else {
+        document.execCommand("copy");
+      }
+      copyButton.textContent = "Codigo copiado";
+      copyButton.classList.add("is-copied");
+    } catch (error) {
+      copyButton.textContent = "Copie pelo campo abaixo";
+    }
+  });
+}
+
 function renderPixResult(data) {
   if (!pixResult) {
     return;
   }
 
-  const qrCode = data.qrCode || data.qr_code_base64 || data.qrCodeBase64;
   const pixCode =
     data.copyAndPaste ||
     data.copyPaste ||
@@ -1096,16 +1187,55 @@ function renderPixResult(data) {
 
   pixResult.classList.add("is-open");
 
-  if (qrCode || pixCode) {
+  if (data.qrCode || data.qrCodeSvg || data.qr_code_svg || pixCode) {
+    const totals = getCheckoutTotals();
+    const product = getTrackingProduct(totals.total);
+
     pixResult.innerHTML = `
-      ${qrCode ? `<img src="${qrCode.startsWith("data:") ? qrCode : `data:image/png;base64,${qrCode}`}" alt="QR Code Pix" />` : ""}
-      ${pixCode ? `<label>Pix copia e cola<textarea readonly>${pixCode}</textarea></label>` : ""}
-      <p>Pedido criado. Apos o pagamento, a confirmacao sera enviada por e-mail.</p>
+      <div class="pix-popup" role="dialog" aria-modal="true" aria-labelledby="pix-popup-title">
+        <div class="pix-popup__hero">
+          <span>Pagamento Pix gerado</span>
+          <strong id="pix-popup-title">Finalize agora para garantir seu pedido</strong>
+          <p data-pix-urgency>Seu desconto Pix fica reservado enquanto o cronometro estiver ativo.</p>
+        </div>
+        <div class="pix-popup__timer">
+          <span>Expira em</span>
+          <strong data-pix-countdown>15:00</strong>
+        </div>
+        <div class="pix-popup__summary">
+          <img src="${productState.image}" alt="Edredom Premium" />
+          <div>
+            <strong>${escapeHtml(product.name)}</strong>
+            <span>Total no Pix</span>
+          </div>
+          <b>${formatCurrency(totals.total)}</b>
+        </div>
+        <div class="pix-popup__qr-card">
+          ${getPixQrMarkup(data, pixCode)}
+          <p>Abra o aplicativo do banco, escaneie o QR Code e pague em poucos segundos.</p>
+        </div>
+        ${
+          pixCode
+            ? `<label class="pix-popup__copy">
+                Pix copia e cola
+                <textarea readonly data-pix-copy-code>${escapeHtml(pixCode)}</textarea>
+              </label>
+              <button class="pix-popup__copy-button" type="button" data-copy-pix>Copiar codigo Pix</button>`
+            : ""
+        }
+        <p class="pix-popup__status" id="pix-status-text">Aguardando pagamento. Nao feche esta pagina.</p>
+      </div>
     `;
+    startPixCountdown();
+    setupPixPopupActions(pixCode);
     return;
   }
 
-  pixResult.innerHTML = "<p>Pedido recebido. Gere o Pix pela sua API para exibir o QR Code aqui.</p>";
+  pixResult.innerHTML = `
+    <div class="pix-popup" role="dialog" aria-modal="true">
+      <p>Pedido recebido, mas a Blackcat nao retornou QR Code nem Pix copia e cola.</p>
+    </div>
+  `;
 }
 
 async function submitInlineCheckout(event) {
@@ -1121,7 +1251,15 @@ async function submitInlineCheckout(event) {
   checkoutFinishButton?.setAttribute("disabled", "true");
   if (pixResult) {
     pixResult.classList.add("is-open");
-    pixResult.innerHTML = "<p>Gerando Pix...</p>";
+    pixResult.innerHTML = `
+      <div class="pix-popup" role="dialog" aria-modal="true">
+        <div class="pix-popup__hero">
+          <span>Processando pedido</span>
+          <strong>Gerando seu Pix...</strong>
+          <p>Aguarde alguns segundos. Estamos reservando seu desconto.</p>
+        </div>
+      </div>
+    `;
   }
 
   try {
@@ -1141,8 +1279,13 @@ async function submitInlineCheckout(event) {
     if (pixResult) {
       pixResult.classList.add("is-open");
       pixResult.innerHTML = `
-        <p>Nao foi possivel gerar o Pix automaticamente agora.</p>
-        <p>Confira a configuracao da sua API Pix e tente novamente.</p>
+        <div class="pix-popup" role="dialog" aria-modal="true">
+          <div class="pix-popup__hero">
+            <span>Pix nao gerado</span>
+            <strong>Nao foi possivel gerar o Pix agora</strong>
+            <p>Confira a configuracao da sua API Pix e tente novamente.</p>
+          </div>
+        </div>
       `;
     }
   } finally {
