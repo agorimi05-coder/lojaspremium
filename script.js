@@ -1046,6 +1046,7 @@ function savePaidOrder(transactionId, payload, status = "paid") {
       transactionId,
       status,
       amount: payload?.amount || order.amount || getCheckoutTotals().total,
+      verifiedByStatusCheck: true,
       paidAt: new Date().toISOString(),
     };
 
