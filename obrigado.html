@@ -80,8 +80,6 @@
         var paidStatuses = ["paid", "approved", "completed", "confirmed", "success", "succeeded", "received"];
         var params = new URLSearchParams(window.location.search);
         var transactionId = params.get("transactionId") || "";
-        var status = String(params.get("status") || "paid").toLowerCase();
-        var isSimulation = params.get("simular") === "1" || params.get("test_mode") === "1";
         var value = Number(params.get("value") || 0);
         var contentId = params.get("content_id") || "premium-edredom";
         var contentName = params.get("content_name") || "Premium Edredom Termico 2 em 1";
@@ -106,6 +104,9 @@
           if (variant && order.product?.variant) variant.textContent = order.product.variant;
         }
 
+        var status = String(order?.status || "").toLowerCase();
+        var hasPaidOrder = Boolean(order?.paidAt || paidStatuses.includes(status));
+
         var total = document.querySelector("[data-thank-total]");
         if (total) {
           total.textContent = Number(value || 0).toLocaleString("pt-BR", {
@@ -114,7 +115,7 @@
           });
         }
 
-        if (!paidStatuses.includes(status)) {
+        if (!hasPaidOrder) {
           return;
         }
 
@@ -137,7 +138,6 @@
               value: value,
               order_id: transactionId,
               payment_method: "pix",
-              test_mode: isSimulation,
             });
 
             try {
